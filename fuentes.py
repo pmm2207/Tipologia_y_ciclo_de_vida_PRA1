@@ -6,6 +6,7 @@ import regex
 import re
 import time
 
+dasdasdasd
 
 cabeceras =['url','Nombre', 'Otros_nombres', 'Pedania', 'Municipio', 'Provincia', 'CoordX','CoordY', 'Cuenca', 'Subcuenca', 'Rio', 'Masa_agua', 'ENP', 'Lugar', 'Naturaleza','Tipo', 'Descripcion', 'Instalaciones_asociadas', 'Caudal', 'Se_agota', 'Uso_agua', 'Acceso', 'Uso_publico','valoracion_acceso','Conservacion', 'Amenazas', 'Descripcion_hidrogeol�gica','Descripcion_arquitectonica',  'Antecedentes_historicos', 'Aspectos_culturales', ' Otra_informacion', 'Cientifico', 'Minero', 'Paisajistico', 'Otros', 'Medioambiental', 'Recreativo', 'Historico', 'Arquitectonico', 'Economico', 'Arraigo', 'Valoracion', 'Autor', 'Fecha']
 with open('conocetusfuentes_04_22.csv',  'a',newline='',encoding="ISO-8859-1") as csvfile:
