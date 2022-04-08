@@ -5,17 +5,57 @@ import csv
 import regex
 import re
 import time
+import webtech
+import whois
+from urllib.request import urlopen
 
+# Evaluación inicial
+#############
+# Tecnología utilizada por el sitio web
+wt = webtech.WebTech(options={'json': True})
 
-cabeceras =['url','Nombre', 'Otros_nombres', 'Pedania', 'Municipio', 'Provincia', 'CoordX','CoordY', 'Cuenca', 'Subcuenca', 'Rio', 'Masa_agua', 'ENP', 'Lugar', 'Naturaleza','Tipo', 'Descripcion', 'Instalaciones_asociadas', 'Caudal', 'Se_agota', 'Uso_agua', 'Acceso', 'Uso_publico','valoracion_acceso','Conservacion', 'Amenazas', 'Descripcion_hidrogeol�gica','Descripcion_arquitectonica',  'Antecedentes_historicos', 'Aspectos_culturales', ' Otra_informacion', 'Cientifico', 'Minero', 'Paisajistico', 'Otros', 'Medioambiental', 'Recreativo', 'Historico', 'Arquitectonico', 'Economico', 'Arraigo', 'Valoracion', 'Autor', 'Fecha']
+try:
+    report = wt.start_from_url('http://www.conocetusfuentes.com')
+    print(report['tech'])
+except wt.utils.ConnectionException:
+    print("Connection error")
+
+# Propietario
+w = whois.whois('http://www.conocetusfuentes.com')
+print(w.org)
+##############
+
+# Extracción de la última página añadida
+html = urlopen("http://www.conocetusfuentes.com/ultimas_fuentes.html")
+bsObj = BeautifulSoup(html,"html.parser")
+html_link = bsObj.find("div", {"class": "ultimas_fuentes"})
+
+# Buscamos la url del último elemento y extraemos el id
+try:
+    for a in html_link.find_all('a', {'href': re.compile(r'datos_fuente.*[.html]$')}):
+        ultimo_elemento = int(
+            re.search(r'datos_fuente_(.*?).html', str(a)).group(1))
+        print("Encontrada la URL del ultimo elemento:", a['href'])
+except:
+    print("No se ha encontrado la URL, asignamos un valor al id")
+    ultimo_elemento = 13500
+
+cabeceras = ['url', 'Nombre', 'Otros_nombres', 'Pedania', 'Municipio', 'Provincia', 'CoordX', 'CoordY', 'Cuenca', 'Subcuenca', 'Rio', 'Masa_agua', 'ENP', 'Lugar', 'Naturaleza', 'Tipo', 'Descripcion', 'Instalaciones_asociadas', 'Caudal', 'Se_agota', 'Uso_agua', 'Acceso', 'Uso_publico', 'valoracion_acceso', 'Conservacion',
+             'Amenazas', 'Descripcion_hidrogeol�gica', 'Descripcion_arquitectonica',  'Antecedentes_historicos', 'Aspectos_culturales', ' Otra_informacion', 'Cientifico', 'Minero', 'Paisajistico', 'Otros', 'Medioambiental', 'Recreativo', 'Historico', 'Arquitectonico', 'Economico', 'Arraigo', 'Valoracion', 'Autor', 'Fecha', 'Imagenes']
 with open('conocetusfuentes_04_22.csv',  'a',newline='',encoding="ISO-8859-1") as csvfile:
     writer = csv.writer(csvfile, delimiter=';', quotechar='|', quoting=csv.QUOTE_NONE, escapechar="\\")
     writer.writerow(cabeceras)
-    for i in range(1, 13500):
+    for i in range(1, ultimo_elemento):
         url = "http://www.conocetusfuentes.com/datos_fuente_" + str(i) + ".html"
 
-        # Realizamos la petición a la we#b
-        req = requests.get(url)
+        # Modificación cabecera HTTP para parecer humano
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_3_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36",
+                   "Accept": "text/html,application/xhtml+xml,application/xml; q=0.9,image/webp,*/*;q=0.8"}
+        # Realizamos la petición a la web
+        # Creamos un delta para añadir un espaciado a las peticiones
+        t0 = time.time()
+        req = requests.get(url, headers=headers)
+        response_delay = time.time() - t0
 
         # Comprobamos que la petición nos devuelve un Status Code = 200
         status_code = req.status_code
@@ -335,8 +375,16 @@ with open('conocetusfuentes_04_22.csv',  'a',newline='',encoding="ISO-8859-1") a
                 fecha = ''
             output_rows.append(autor)
             output_rows.append(fecha)
+
+            # Añadimos todas las url de imágenes, ya sean de la fuente o de la ubicación
+            for img in html.find_all("img", {'src': re.compile(r'fuente.*[.jpg]$|ubicacion.*[.jpg]$')}):
+                images = img.attrs.get("src")
+                output_rows.append(images)
+
             print(output_rows)
             if (len(nombre)>0):
                 writer.writerow(output_rows)
-            time.sleep(1)        
-            
+            time.sleep(1)     
+        # Aplicamos un espaciado entre peticiones    
+        time.sleep(5 * response_delay)          
+           
